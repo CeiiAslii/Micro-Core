@@ -4,6 +4,7 @@ import '../../core/theme.dart';
 import '../../core/mikrotik_api.dart';
 import '../../providers/app_provider.dart';
 import '../../widgets/skeleton.dart';
+import '../../widgets/router_choice_field.dart';
 
 class IpScreen extends StatefulWidget {
   final MikrotikApi api;
@@ -51,14 +52,27 @@ class _IpScreenState extends State<IpScreen> {
           r = await widget.api.query(['/ip/dhcp-server/print']);
           break;
         case 3:
+          // Ambil semua lease, filter bound di UI
           r = await widget.api.query(['/ip/dhcp-server/lease/print']);
+          // Sort: bound dulu
+          r.sort((a, b) {
+            final aStatus = a['status'] ?? '';
+            final bStatus = b['status'] ?? '';
+            if (aStatus == 'bound' && bStatus != 'bound') return -1;
+            if (aStatus != 'bound' && bStatus == 'bound') return 1;
+            return 0;
+          });
+          break;
+        case 4:
+          r = await widget.api.query(['/ip/dns/print']);
           break;
       }
-      if (mounted)
+      if (mounted) {
         setState(() {
           _data = r;
           _loading = false;
         });
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
@@ -74,6 +88,8 @@ class _IpScreenState extends State<IpScreen> {
         return 'DHCP Server';
       case 3:
         return 'DHCP Lease';
+      case 4:
+        return 'DNS Settings';
       default:
         return 'IP';
     }
@@ -89,6 +105,8 @@ class _IpScreenState extends State<IpScreen> {
         return AppColors.orange;
       case 3:
         return AppColors.blue;
+      case 4:
+        return AppColors.purple;
       default:
         return AppColors.cyan;
     }
@@ -104,6 +122,8 @@ class _IpScreenState extends State<IpScreen> {
         return Icons.router_rounded;
       case 3:
         return Icons.devices_rounded;
+      case 4:
+        return Icons.dns_rounded;
       default:
         return Icons.lan_rounded;
     }
@@ -144,20 +164,52 @@ class _IpScreenState extends State<IpScreen> {
         ]);
 
       case 3: // DHCP Lease
+        final status = item['status'] ?? '-';
         final dynamic_ = item['dynamic'] == 'true';
         final hostname = item['host-name'] ?? '';
-        return _card(c, color, [
-          _row('IP', item['address'] ?? '-', c),
-          _row('MAC', item['mac-address'] ?? '-', c),
+        final mac = item['mac-address'] ?? '-';
+        final ip = item['address'] ?? '-';
+
+        // Warna berdasarkan status
+        Color statusColor;
+        switch (status) {
+          case 'bound':
+            statusColor = AppColors.green;
+            break;
+          case 'waiting':
+            statusColor = AppColors.orange;
+            break;
+          case 'expired':
+            statusColor = AppColors.red;
+            break;
+          default:
+            statusColor = c.sub;
+        }
+
+        return _card(c, _color(), [
+          _row('IP', ip, c),
+          _row('MAC', mac, c),
           if (hostname.isNotEmpty) _row('Hostname', hostname, c),
+          _row('Status', status.toUpperCase(), c, valueColor: statusColor),
           _row(
-            'Status',
+            'Type',
             dynamic_ ? 'Dynamic' : 'Static',
             c,
             valueColor: dynamic_ ? AppColors.orange : AppColors.cyan,
           ),
           if ((item['expires-after'] ?? '').isNotEmpty)
             _row('Expires', item['expires-after'] ?? '-', c),
+        ]);
+      case 4:
+        return _card(c, color, [
+          _row('Servers', item['servers'] ?? '-', c),
+          _row(
+            'Remote Requests',
+            item['allow-remote-requests'] == 'true' ? 'YES' : 'NO',
+            c,
+          ),
+          _row('Cache Size', item['cache-size'] ?? '-', c),
+          _row('Cache Used', item['cache-used'] ?? '-', c),
         ]);
 
       default:
@@ -217,6 +269,23 @@ class _IpScreenState extends State<IpScreen> {
                   child: Icon(Icons.refresh_rounded, color: color, size: 18),
                 ),
               ),
+              if (widget.subIndex != 3) ...[
+                const SizedBox(width: 6),
+                IconButton.filled(
+                  tooltip: widget.subIndex == 4 ? 'Edit DNS' : 'Tambah',
+                  onPressed: () => _openEditor(
+                    widget.subIndex == 4 && _data.isNotEmpty
+                        ? _data.first
+                        : null,
+                  ),
+                  icon: Icon(
+                    widget.subIndex == 4
+                        ? Icons.edit_rounded
+                        : Icons.add_rounded,
+                    size: 18,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -226,7 +295,7 @@ class _IpScreenState extends State<IpScreen> {
               ? ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: 5,
-                  itemBuilder: (_, __) => Padding(
+                  itemBuilder: (_, _) => Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: SkeletonBox(height: 90, radius: 12),
                   ),
@@ -251,7 +320,15 @@ class _IpScreenState extends State<IpScreen> {
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: _data.length,
-                    itemBuilder: (_, i) => _buildItem(_data[i], c),
+                    itemBuilder: (_, i) => InkWell(
+                      onLongPress: widget.subIndex == 3 || widget.subIndex == 4
+                          ? null
+                          : () => _delete(_data[i]),
+                      onTap: widget.subIndex == 3
+                          ? null
+                          : () => _openEditor(_data[i]),
+                      child: _buildItem(_data[i], c),
+                    ),
                   ),
                 ),
         ),
@@ -293,4 +370,249 @@ class _IpScreenState extends State<IpScreen> {
           ],
         ),
       );
+
+  Future<void> _openEditor([Map<String, String>? row]) async {
+    final changed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) =>
+          _IpConfigEditor(api: widget.api, type: widget.subIndex, row: row),
+    );
+    if (changed == true) _fetch();
+  }
+
+  Future<void> _delete(Map<String, String> row) async {
+    final id = row['.id'];
+    if (id == null) return;
+    final endpoint = switch (widget.subIndex) {
+      0 => '/ip/address',
+      1 => '/ip/pool',
+      2 => '/ip/dhcp-server',
+      _ => '',
+    };
+    if (endpoint.isEmpty) return;
+    final ok =
+        await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Hapus konfigurasi'),
+            content: const Text('Konfigurasi ini akan dihapus dari router.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Batal'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Hapus'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!ok) return;
+    await widget.api.queryOrThrow(['$endpoint/remove', '=.id=$id']);
+    _fetch();
+  }
+}
+
+class _IpConfigEditor extends StatefulWidget {
+  final MikrotikApi api;
+  final int type;
+  final Map<String, String>? row;
+
+  const _IpConfigEditor({required this.api, required this.type, this.row});
+
+  @override
+  State<_IpConfigEditor> createState() => _IpConfigEditorState();
+}
+
+class _IpConfigEditorState extends State<_IpConfigEditor> {
+  final Map<String, TextEditingController> _controllers = {};
+  List<String> _interfaces = [];
+  List<String> _pools = [];
+  bool _loading = true;
+  bool _saving = false;
+
+  Map<String, String> get _labels => switch (widget.type) {
+    0 => {
+      'address': 'Address *',
+      'network': 'Network',
+      'interface': 'Interface *',
+      'comment': 'Comment',
+    },
+    1 => {
+      'name': 'Name *',
+      'ranges': 'Addresses *',
+      'next-pool': 'Next Pool',
+      'comment': 'Comment',
+    },
+    2 => {
+      'name': 'Name *',
+      'interface': 'Interface *',
+      'relay': 'Relay',
+      'lease-time': 'Lease Time',
+      'address-pool': 'Address Pool',
+      'add-arp': 'Add ARP',
+      'authoritative': 'Authoritative',
+      'comment': 'Comment',
+    },
+    _ => {
+      'servers': 'Servers',
+      'use-doh-server': 'Use DoH Server',
+      'allow-remote-requests': 'Allow Remote Requests',
+      'vrf': 'VRF',
+      'max-udp-packet-size': 'Max UDP Packet Size',
+      'query-server-timeout': 'Query Server Timeout',
+      'query-total-timeout': 'Query Total Timeout',
+      'max-concurrent-queries': 'Max Concurrent Queries',
+      'max-concurrent-tcp-sessions': 'Max Concurrent TCP Sessions',
+      'cache-size': 'Cache Size',
+      'cache-max-ttl': 'Cache Max TTL',
+    },
+  };
+
+  bool get _editing => widget.row != null;
+
+  @override
+  void initState() {
+    super.initState();
+    for (final entry in _labels.entries) {
+      _controllers[entry.key] = TextEditingController(
+        text: widget.row?[entry.key] ?? '',
+      );
+    }
+    _loadOptions();
+  }
+
+  Future<void> _loadOptions() async {
+    final results = await Future.wait([
+      widget.api.query(['/interface/print']),
+      widget.api.query(['/ip/pool/print']),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      _interfaces = results[0]
+          .map((r) => r['name'])
+          .whereType<String>()
+          .toList();
+      _pools = results[1].map((r) => r['name']).whereType<String>().toList();
+      _loading = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    for (final controller in _controllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  List<String> _options(String key) {
+    if (key == 'interface') return _interfaces;
+    if (key == 'address-pool') return ['static-only', ..._pools];
+    if (key == 'next-pool') return ['none', ..._pools];
+    if (key == 'add-arp' || key == 'allow-remote-requests') {
+      return const ['yes', 'no'];
+    }
+    if (key == 'authoritative') {
+      return const ['yes', 'no', 'after-2sec-delay', 'after-10sec-delay'];
+    }
+    return const [];
+  }
+
+  Future<void> _save() async {
+    final required = switch (widget.type) {
+      0 => ['address', 'interface'],
+      1 => ['name', 'ranges'],
+      2 => ['name', 'interface'],
+      _ => <String>[],
+    };
+    if (required.any((key) => _controllers[key]!.text.trim().isEmpty)) {
+      _message('Field wajib belum lengkap');
+      return;
+    }
+    setState(() => _saving = true);
+    final endpoint = switch (widget.type) {
+      0 => '/ip/address',
+      1 => '/ip/pool',
+      2 => '/ip/dhcp-server',
+      _ => '/ip/dns',
+    };
+    final singleton = widget.type == 4;
+    final command = <String>[
+      '$endpoint/${singleton ? 'set' : (_editing ? 'set' : 'add')}',
+      if (_editing && !singleton) '=.id=${widget.row!['.id']}',
+    ];
+    for (final key in _labels.keys) {
+      final value = _controllers[key]!.text.trim();
+      final original = widget.row?[key] ?? '';
+      if (singleton || _editing) {
+        if (value != original) command.add('=$key=$value');
+      } else if (value.isNotEmpty) {
+        command.add('=$key=$value');
+      }
+    }
+    try {
+      await widget.api.queryOrThrow(command);
+      if (mounted) Navigator.pop(context, true);
+    } catch (error) {
+      _message(error.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          12,
+          8,
+          12,
+          MediaQuery.viewInsetsOf(context).bottom + 12,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              ..._labels.entries.map((entry) {
+                final options = _options(entry.key);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 7),
+                  child: options.isEmpty
+                      ? TextField(
+                          controller: _controllers[entry.key],
+                          decoration: InputDecoration(labelText: entry.value),
+                        )
+                      : RouterChoiceField(
+                          controller: _controllers[entry.key]!,
+                          label: entry.value,
+                          options: options,
+                          loading: _loading,
+                        ),
+                );
+              }),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _saving ? null : _save,
+                  icon: const Icon(Icons.check_rounded),
+                  label: const Text('Simpan'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _message(String value) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(value), backgroundColor: AppColors.red),
+    );
+  }
 }

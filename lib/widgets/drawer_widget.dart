@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../core/theme.dart';
+
 import '../core/constants.dart';
+import '../core/theme.dart';
 import '../providers/app_provider.dart';
 
 class DrawerWidget extends StatefulWidget {
   final int selectedIndex;
-  final Function(int) onSelect;
+  final int selectedSubIndex;
+  final ValueChanged<int> onSelect;
 
   const DrawerWidget({
     super.key,
     required this.selectedIndex,
+    required this.selectedSubIndex,
     required this.onSelect,
   });
 
@@ -19,321 +22,314 @@ class DrawerWidget extends StatefulWidget {
 }
 
 class _DrawerWidgetState extends State<DrawerWidget> {
-  // Track expanded sub menu
   int? _expandedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.selectedIndex == 12) {
+      _expandedIndex = _configGroupKey(widget.selectedSubIndex);
+    } else if ({1, 2, 3, 6}.contains(widget.selectedIndex)) {
+      _expandedIndex = widget.selectedIndex;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant DrawerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedIndex != widget.selectedIndex ||
+        oldWidget.selectedSubIndex != widget.selectedSubIndex) {
+      if (widget.selectedIndex == 12) {
+        _expandedIndex = _configGroupKey(widget.selectedSubIndex);
+      } else if ({1, 2, 3, 6}.contains(widget.selectedIndex)) {
+        _expandedIndex = widget.selectedIndex;
+      }
+    }
+  }
+
+  int _configGroupKey(int module) {
+    if (module <= 3 || module >= 21 && module <= 26) return 120;
+    if (module <= 7) return 121;
+    if (module <= 12) return 122;
+    if (module <= 15 || module >= 27 && module <= 29) return 123;
+    if (module <= 17) return 124;
+    return 125;
+  }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
-    final dark = provider.isDark;
-    final c = AppC(dark);
+    final c = AppC(provider.isDark);
 
     return Drawer(
+      width: 280,
       backgroundColor: c.surface,
-      child: Column(
-        children: [
-          // ── Header ──────────────────────────────────
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF003A4D), AppColors.cyanDark],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Logo + App name
-                Row(
-                  children: [
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.router_rounded,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          AppInfo.name,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        Text(
-                          'v${AppInfo.version}',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.6),
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-                const Divider(color: Colors.white24, height: 1),
-                const SizedBox(height: 14),
-
-                // Router info
-                Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: AppColors.green,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        provider.routerName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${provider.routerModel}  •  RouterOS v${provider.routerVersion}',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    fontSize: 11,
+      child: SafeArea(
+        child: Column(
+          children: [
+            _header(provider, c),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 18),
+                children: [
+                  _sectionLabel('MONITORING', c),
+                  _item(0, Icons.dashboard_rounded, 'Dashboard', c),
+                  _item(9, Icons.health_and_safety_rounded, 'Health Center', c),
+                  _group(6, Icons.monitor_heart_rounded, 'Interface', c, [
+                    _SubItem(Icons.show_chart_rounded, 'Traffic Realtime', 60),
+                    _SubItem(Icons.lan_rounded, 'Status Interface', 61),
+                  ]),
+                  _sectionLabel('JARINGAN', c),
+                  _group(1, Icons.hub_rounded, 'IP & DHCP', c, [
+                    _SubItem(Icons.grid_view_rounded, 'IP Address', 10),
+                    _SubItem(Icons.pool_rounded, 'IP Pool', 11),
+                    _SubItem(Icons.router_rounded, 'DHCP Server', 12),
+                    _SubItem(Icons.devices_rounded, 'DHCP Lease', 13),
+                    _SubItem(Icons.dns_rounded, 'DNS Settings', 14),
+                  ]),
+                  _item(
+                    11,
+                    Icons.admin_panel_settings_rounded,
+                    'Firewall',
+                    c,
+                    selectCode: -11,
                   ),
-                ),
-
-                const SizedBox(height: 14),
-
-                // Theme toggle
-                GestureDetector(
-                  onTap: () => provider.toggleTheme(),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.2),
+                  _group(
+                    12,
+                    Icons.device_hub_rounded,
+                    'Switching & VLAN',
+                    c,
+                    [
+                      _SubItem(Icons.device_hub_rounded, 'Bridge', 1200),
+                      _SubItem(
+                        Icons.settings_ethernet_rounded,
+                        'Bridge Ports',
+                        1201,
                       ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          dark
-                              ? Icons.light_mode_rounded
-                              : Icons.dark_mode_rounded,
-                          color: dark ? Colors.amber : Colors.white70,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          dark ? 'Mode Terang' : 'Mode Gelap',
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        // Mini toggle visual
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: 32,
-                          height: 18,
-                          decoration: BoxDecoration(
-                            color: dark ? Colors.amber : Colors.white30,
-                            borderRadius: BorderRadius.circular(9),
-                          ),
-                          child: AnimatedAlign(
-                            duration: const Duration(milliseconds: 200),
-                            alignment: dark
-                                ? Alignment.centerRight
-                                : Alignment.centerLeft,
-                            child: Container(
-                              margin: const EdgeInsets.all(2),
-                              width: 14,
-                              height: 14,
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                      _SubItem(Icons.view_week_outlined, 'Bridge VLANs', 1202),
+                      _SubItem(Icons.account_tree_outlined, 'VLAN', 1203),
+                      _SubItem(
+                        Icons.account_tree_rounded,
+                        'Bridge MSTIs',
+                        1225,
+                      ),
+                      _SubItem(Icons.alt_route_rounded, 'MST Overrides', 1226),
+                      _SubItem(
+                        Icons.filter_alt_outlined,
+                        'Bridge Filters',
+                        1221,
+                      ),
+                      _SubItem(Icons.swap_horiz_rounded, 'Bridge NAT', 1222),
+                      _SubItem(Icons.devices_outlined, 'Bridge Hosts', 1223),
+                      _SubItem(Icons.hub_outlined, 'Bridge MDB', 1224),
+                    ],
+                    expansionKey: 120,
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          // ── Menu Items ───────────────────────────────
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              children: [
-                // 1. Dashboard
-                _menuItem(
-                  context: context,
-                  index: 0,
-                  icon: Icons.dashboard_rounded,
-                  label: 'Dashboard',
-                  c: c,
-                ),
-
-                // 2. IP
-                _menuGroup(
-                  context: context,
-                  index: 1,
-                  icon: Icons.lan_rounded,
-                  label: 'IP',
-                  c: c,
-                  subItems: [
+                  _group(12, Icons.vpn_key_outlined, 'VPN', c, [
+                    _SubItem(Icons.vpn_key_outlined, 'WireGuard', 1204),
                     _SubItem(
-                      Icons.grid_view_rounded,
-                      'IP Address',
-                      () => _nav(context, 1, 0),
+                      Icons.people_outline_rounded,
+                      'WireGuard Peers',
+                      1205,
                     ),
+                    _SubItem(Icons.security_rounded, 'IPsec Peers', 1206),
+                    _SubItem(Icons.key_rounded, 'IPsec Identity', 1207),
+                  ], expansionKey: 121),
+                  _group(12, Icons.alt_route_rounded, 'Routing & IP', c, [
+                    _SubItem(Icons.alt_route_rounded, 'Routes', 1208),
+                    _SubItem(Icons.table_rows_outlined, 'Routing Tables', 1209),
+                    _SubItem(Icons.dns_rounded, 'DNS Static', 1210),
+                    _SubItem(Icons.lan_outlined, 'ARP', 1211),
+                    _SubItem(Icons.radar_outlined, 'Neighbors', 1212),
+                  ], expansionKey: 122),
+                  _item(4, Icons.balance_rounded, 'Load Balance', c),
+                  _sectionLabel('QOS & MONITOR', c),
+                  _group(12, Icons.speed_rounded, 'Queue & Monitor', c, [
+                    _SubItem(Icons.speed_rounded, 'Simple Queue', 1213),
                     _SubItem(
-                      Icons.pool_rounded,
-                      'IP Pool',
-                      () => _nav(context, 1, 1),
+                      Icons.settings_ethernet_rounded,
+                      'Interface Queues',
+                      1227,
                     ),
+                    _SubItem(Icons.account_tree_outlined, 'Queue Tree', 1228),
+                    _SubItem(Icons.tune_rounded, 'Queue Types', 1229),
+                    _SubItem(Icons.visibility_outlined, 'Netwatch', 1214),
+                    _SubItem(Icons.sensors_outlined, 'SNMP Community', 1215),
+                  ], expansionKey: 123),
+                  _sectionLabel('AKSES PENGGUNA', c),
+                  _group(2, Icons.wifi_rounded, 'Hotspot', c, [
+                    _SubItem(Icons.people_rounded, 'User Aktif', 20),
+                    _SubItem(Icons.confirmation_number_rounded, 'Voucher', 21),
+                    _SubItem(Icons.add_card_rounded, 'Generate Voucher', 22),
                     _SubItem(
-                      Icons.router_rounded,
-                      'DHCP Server',
-                      () => _nav(context, 1, 2),
+                      Icons.settings_backup_restore_rounded,
+                      'Backup',
+                      23,
                     ),
-                    _SubItem(
-                      Icons.dns_rounded,
-                      'DHCP Lease',
-                      () => _nav(context, 1, 3),
-                    ),
-                  ],
-                ),
-
-                // 3. Hotspot
-                _menuGroup(
-                  context: context,
-                  index: 2,
-                  icon: Icons.wifi_rounded,
-                  label: 'Hotspot',
-                  c: c,
-                  subItems: [
-                    _SubItem(
-                      Icons.people_rounded,
-                      'User Aktif',
-                      () => _nav(context, 2, 0),
-                    ),
-                    _SubItem(
-                      Icons.list_alt_rounded,
-                      'Semua Voucher',
-                      () => _nav(context, 2, 1),
-                    ),
-                    _SubItem(
-                      Icons.add_card_rounded,
-                      'Generate Voucher',
-                      () => _nav(context, 2, 2),
-                    ),
-                    _SubItem(
-                      Icons.backup_rounded,
-                      'Backup & Restore',
-                      () => _nav(context, 2, 3),
-                    ),
-                  ],
-                ),
-
-                // 4. PPPoE
-                _menuGroup(
-                  context: context,
-                  index: 3,
-                  icon: Icons.cable_rounded,
-                  label: 'PPPoE',
-                  c: c,
-                  subItems: [
+                    _SubItem(Icons.router_outlined, 'Servers', 24),
+                    _SubItem(Icons.web_outlined, 'Server Profiles', 25),
+                    _SubItem(Icons.badge_outlined, 'User Profiles', 26),
+                  ]),
+                  _group(3, Icons.cable_rounded, 'PPP', c, [
                     _SubItem(
                       Icons.people_alt_rounded,
-                      'Client Aktif',
-                      () => _nav(context, 3, 0),
+                      'Active Connections',
+                      30,
                     ),
-                    _SubItem(
-                      Icons.manage_accounts_rounded,
-                      'Semua User',
-                      () => _nav(context, 3, 1),
+                    _SubItem(Icons.manage_accounts_rounded, 'Secrets', 31),
+                    _SubItem(Icons.speed_rounded, 'Profiles', 32),
+                    _SubItem(Icons.person_add_rounded, 'Tambah Secret', 33),
+                    _SubItem(Icons.router_outlined, 'PPPoE Servers', 34),
+                  ]),
+                  _sectionLabel('TOOLS', c),
+                  _group(12, Icons.code_rounded, 'Automation', c, [
+                    _SubItem(Icons.code_rounded, 'Scripts', 1216),
+                    _SubItem(Icons.schedule_rounded, 'Scheduler', 1217),
+                  ], expansionKey: 124),
+                  _item(
+                    10,
+                    Icons.terminal_rounded,
+                    'RouterOS Terminal',
+                    c,
+                    selectCode: -10,
+                  ),
+                  _item(
+                    14,
+                    Icons.troubleshoot_rounded,
+                    'Diagnostics',
+                    c,
+                    selectCode: -14,
+                  ),
+                  _item(5, Icons.folder_copy_rounded, 'File & Storage', c),
+                  _item(8, Icons.receipt_long_rounded, 'Log Router', c),
+                  _sectionLabel('SISTEM', c),
+                  _group(
+                    12,
+                    Icons.admin_panel_settings_outlined,
+                    'Administration',
+                    c,
+                    [
+                      _SubItem(
+                        Icons.manage_accounts_rounded,
+                        'Router Users',
+                        1218,
+                      ),
+                      _SubItem(
+                        Icons.miscellaneous_services_rounded,
+                        'IP Services',
+                        1219,
+                      ),
+                      _SubItem(Icons.inventory_2_outlined, 'Packages', 1220),
+                      _SubItem(
+                        Icons.verified_user_outlined,
+                        'Certificates',
+                        1221,
+                      ),
+                    ],
+                    expansionKey: 125,
+                  ),
+                  _item(
+                    13,
+                    Icons.settings_rounded,
+                    'System Control',
+                    c,
+                    selectCode: -13,
+                  ),
+                  _item(7, Icons.info_outline_rounded, 'Tentang', c),
+                ],
+              ),
+            ),
+            _footer(context, provider, c),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _header(AppProvider provider, AppC c) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: c.sub.withValues(alpha: 0.12)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.cyan.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.router_rounded,
+                  color: AppColors.cyan,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      AppInfo.name,
+                      style: TextStyle(
+                        color: AppColors.cyan,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
                     ),
-                    _SubItem(
-                      Icons.speed_rounded,
-                      'Profile',
-                      () => _nav(context, 3, 2),
-                    ),
-                    _SubItem(
-                      Icons.person_add_rounded,
-                      'Tambah User',
-                      () => _nav(context, 3, 3),
+                    Text(
+                      'Router Management',
+                      style: TextStyle(color: c.sub, fontSize: 9),
                     ),
                   ],
                 ),
-
-                // 5. Load Balance
-                _menuItem(
-                  context: context,
-                  index: 4,
-                  icon: Icons.balance_rounded,
-                  label: 'Load Balance',
-                  c: c,
+              ),
+              Text(
+                'v${AppInfo.version}',
+                style: TextStyle(color: c.sub, fontSize: 9),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+            decoration: BoxDecoration(
+              color: c.bg,
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.circle, color: AppColors.green, size: 8),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        provider.routerName,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: c.txt,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        '${provider.routerModel} • RouterOS ${provider.routerVersion}',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: c.sub, fontSize: 9),
+                      ),
+                    ],
+                  ),
                 ),
-
-                // 6. Storage
-                _menuItem(
-                  context: context,
-                  index: 5,
-                  icon: Icons.storage_rounded,
-                  label: 'Storage',
-                  c: c,
-                ),
-
-                // 7. About
-                _menuItem(
-                  context: context,
-                  index: 6,
-                  icon: Icons.info_rounded,
-                  label: 'About',
-                  c: c,
-                ),
-
-                const SizedBox(height: 8),
-                Divider(color: c.sub.withValues(alpha: 0.15), height: 1),
-                const SizedBox(height: 8),
-
-                // Logout
-                _logoutTile(context, c),
               ],
             ),
           ),
@@ -342,224 +338,245 @@ class _DrawerWidgetState extends State<DrawerWidget> {
     );
   }
 
-  void _nav(BuildContext context, int menuIdx, int subIdx) {
-    Navigator.pop(context);
-    widget.onSelect(menuIdx * 10 + subIdx);
-  }
-
-  Widget _menuItem({
-    required BuildContext context,
-    required int index,
-    required IconData icon,
-    required String label,
-    required AppC c,
-  }) {
-    final active = widget.selectedIndex == index;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-      decoration: BoxDecoration(
-        color: active
-            ? AppColors.cyan.withValues(alpha: 0.12)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
-        leading: Icon(icon, color: active ? AppColors.cyan : c.sub, size: 22),
-        title: Text(
-          label,
-          style: TextStyle(
-            color: active ? AppColors.cyan : c.txt,
-            fontWeight: active ? FontWeight.bold : FontWeight.normal,
-            fontSize: 14,
-          ),
+  Widget _sectionLabel(String label, AppC c) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 15, 8, 6),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: c.sub.withValues(alpha: 0.75),
+          fontSize: 8,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.2,
         ),
-        onTap: () {
-          Navigator.pop(context);
-          widget.onSelect(index);
-        },
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        dense: true,
       ),
     );
   }
 
-  Widget _menuGroup({
-    required BuildContext context,
-    required int index,
-    required IconData icon,
-    required String label,
-    required AppC c,
-    required List<_SubItem> subItems,
+  Widget _item(
+    int index,
+    IconData icon,
+    String label,
+    AppC c, {
+    int? selectCode,
   }) {
-    final expanded = _expandedIndex == index;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-      decoration: BoxDecoration(
-        color: expanded
-            ? AppColors.cyan.withValues(alpha: 0.05)
+    final active = widget.selectedIndex == index;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: Material(
+        color: active
+            ? AppColors.cyan.withValues(alpha: 0.12)
             : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        border: expanded
-            ? Border.all(color: AppColors.cyan.withValues(alpha: 0.15))
-            : null,
+        borderRadius: BorderRadius.circular(10),
+        child: ListTile(
+          minTileHeight: 42,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+          leading: Icon(icon, color: active ? AppColors.cyan : c.sub, size: 18),
+          title: Text(
+            label,
+            style: TextStyle(
+              color: active ? AppColors.cyan : c.txt,
+              fontSize: 12,
+              fontWeight: active ? FontWeight.bold : FontWeight.w500,
+            ),
+          ),
+          trailing: active
+              ? Container(
+                  width: 3,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    color: AppColors.cyan,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                )
+              : null,
+          onTap: () => _select(selectCode ?? index),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          dense: true,
+        ),
+      ),
+    );
+  }
+
+  Widget _group(
+    int index,
+    IconData icon,
+    String label,
+    AppC c,
+    List<_SubItem> children, {
+    int? expansionKey,
+  }) {
+    final groupKey = expansionKey ?? index;
+    final expanded = _expandedIndex == groupKey;
+    final active =
+        widget.selectedIndex == index &&
+        children.any((item) {
+          final subIndex = index == 12 ? item.code - 1200 : item.code % 10;
+          return widget.selectedSubIndex == subIndex;
+        });
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      decoration: BoxDecoration(
+        color: active
+            ? AppColors.cyan.withValues(alpha: 0.06)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         children: [
-          // Header group
           ListTile(
+            minTileHeight: 42,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 10),
             leading: Icon(
               icon,
-              color: expanded ? AppColors.cyan : c.sub,
-              size: 22,
+              color: active || expanded ? AppColors.cyan : c.sub,
+              size: 18,
             ),
             title: Text(
               label,
               style: TextStyle(
-                color: expanded ? AppColors.cyan : c.txt,
-                fontWeight: expanded ? FontWeight.bold : FontWeight.normal,
-                fontSize: 14,
+                color: active || expanded ? AppColors.cyan : c.txt,
+                fontSize: 12,
+                fontWeight: active ? FontWeight.bold : FontWeight.w500,
               ),
             ),
             trailing: AnimatedRotation(
               turns: expanded ? 0.5 : 0,
-              duration: const Duration(milliseconds: 200),
+              duration: const Duration(milliseconds: 180),
               child: Icon(
                 Icons.keyboard_arrow_down_rounded,
-                color: expanded ? AppColors.cyan : c.sub,
-                size: 20,
+                color: c.sub,
+                size: 19,
               ),
             ),
-            onTap: () {
-              setState(() {
-                _expandedIndex = expanded ? null : index;
-              });
-            },
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            onTap: () =>
+                setState(() => _expandedIndex = expanded ? null : groupKey),
             dense: true,
           ),
-
-          // Sub items
           AnimatedCrossFade(
             firstChild: const SizedBox.shrink(),
-            secondChild: Column(
-              children: subItems
-                  .map(
-                    (item) => Container(
-                      margin: const EdgeInsets.only(
-                        left: 16,
-                        right: 4,
-                        bottom: 2,
-                      ),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 0, 4, 7),
+              child: Container(
+                padding: const EdgeInsets.only(left: 10),
+                decoration: BoxDecoration(
+                  border: Border(
+                    left: BorderSide(
+                      color: AppColors.cyan.withValues(alpha: 0.22),
+                    ),
+                  ),
+                ),
+                child: Column(
+                  children: children.map((item) {
+                    final subIndex = index == 12
+                        ? item.code - 1200
+                        : item.code % 10;
+                    final subActive =
+                        active && widget.selectedSubIndex == subIndex;
+                    return Material(
+                      color: subActive
+                          ? AppColors.cyan.withValues(alpha: 0.1)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(9),
                       child: ListTile(
-                        leading: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: AppColors.cyan.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            item.icon,
-                            color: AppColors.cyan,
-                            size: 15,
-                          ),
+                        minTileHeight: 36,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                        ),
+                        leading: Icon(
+                          item.icon,
+                          color: subActive ? AppColors.cyan : c.sub,
+                          size: 15,
                         ),
                         title: Text(
                           item.label,
-                          style: TextStyle(color: c.txt, fontSize: 13),
+                          style: TextStyle(
+                            color: subActive ? AppColors.cyan : c.txt,
+                            fontSize: 11,
+                            fontWeight: subActive
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
                         ),
-                        onTap: () {
-                          setState(() => _expandedIndex = null);
-                          item.onTap();
-                        },
+                        trailing: subActive
+                            ? const Icon(
+                                Icons.circle,
+                                color: AppColors.cyan,
+                                size: 5,
+                              )
+                            : null,
+                        onTap: () => _select(item.code),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(9),
                         ),
                         dense: true,
                         visualDensity: VisualDensity.compact,
                       ),
-                    ),
-                  )
-                  .toList(),
+                    );
+                  }).toList(),
+                ),
+              ),
             ),
             crossFadeState: expanded
                 ? CrossFadeState.showSecond
                 : CrossFadeState.showFirst,
-            duration: const Duration(milliseconds: 200),
+            duration: const Duration(milliseconds: 180),
           ),
         ],
       ),
     );
   }
 
-  Widget _logoutTile(BuildContext context, AppC c) {
+  Widget _footer(BuildContext context, AppProvider provider, AppC c) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-      child: ListTile(
-        leading: const Icon(
-          Icons.power_settings_new_rounded,
-          color: AppColors.red,
-          size: 22,
-        ),
-        title: const Text(
-          'Logout',
-          style: TextStyle(
-            color: AppColors.red,
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
-        ),
-        onTap: () {
-          Navigator.pop(context);
-          showDialog(
-            context: context,
-            builder: (_) => AlertDialog(
-              backgroundColor: c.card,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: c.sub.withValues(alpha: 0.1))),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextButton.icon(
+              onPressed: provider.toggleTheme,
+              icon: Icon(
+                provider.isDark
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+                size: 18,
               ),
-              title: Text('Logout', style: TextStyle(color: c.txt)),
-              content: Text(
-                'Yakin mau disconnect dari router?',
-                style: TextStyle(color: c.sub),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('Batal', style: TextStyle(color: c.sub)),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    context.read<AppProvider>().disconnect();
-                    Navigator.pop(context);
-                    Navigator.pushReplacementNamed(context, '/login');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.red,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Text('Logout'),
-                ),
-              ],
+              label: Text(provider.isDark ? 'Terang' : 'Gelap'),
             ),
-          );
-        },
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        dense: true,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                provider.disconnect();
+                Navigator.pushReplacementNamed(context, '/login');
+              },
+              style: TextButton.styleFrom(foregroundColor: AppColors.red),
+              icon: const Icon(Icons.logout_rounded, size: 18),
+              label: const Text('Keluar'),
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  void _select(int code) {
+    Navigator.pop(context);
+    widget.onSelect(code);
   }
 }
 
 class _SubItem {
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
-  const _SubItem(this.icon, this.label, this.onTap);
+  final int code;
+
+  const _SubItem(this.icon, this.label, this.code);
 }

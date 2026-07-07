@@ -45,7 +45,7 @@ class _SkeletonBoxState extends State<SkeletonBox>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _anim,
-      builder: (_, __) => Container(
+      builder: (_, _) => Container(
         width: widget.width,
         height: widget.height,
         decoration: BoxDecoration(
@@ -116,21 +116,19 @@ class SkeletonStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 9),
       decoration: BoxDecoration(
         color: c.card,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: c.sub.withValues(alpha: 0.12)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          SkeletonBox(width: 36, height: 36, radius: 10),
-          const SizedBox(height: 10),
-          SkeletonBox(width: 50, height: 28),
-          const SizedBox(height: 6),
-          SkeletonBox(width: 70, height: 11),
-          const SizedBox(height: 4),
-          SkeletonBox(width: 50, height: 10),
+          SkeletonBox(width: 15, height: 15, radius: 5),
+          const SizedBox(width: 7),
+          Expanded(child: SkeletonBox(height: 9, radius: 4)),
+          const SizedBox(width: 7),
+          SkeletonBox(width: 20, height: 18, radius: 5),
         ],
       ),
     );
@@ -139,47 +137,90 @@ class SkeletonStat extends StatelessWidget {
 
 // Router card skeleton
 class SkeletonRouterCard extends StatelessWidget {
-  const SkeletonRouterCard({super.key});
+  final AppC c;
+  const SkeletonRouterCard({super.key, required this.c});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF003A4D),
-        borderRadius: BorderRadius.circular(20),
+        color: c.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: c.sub.withValues(alpha: 0.12)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              SkeletonBox(width: 48, height: 48, radius: 14),
-              const SizedBox(width: 14),
+              SkeletonBox(width: 35, height: 35, radius: 9),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SkeletonBox(width: 140, height: 18),
-                    const SizedBox(height: 6),
-                    SkeletonBox(width: 100, height: 12),
+                    SkeletonBox(width: 120, height: 14),
+                    const SizedBox(height: 5),
+                    SkeletonBox(width: 150, height: 9),
+                    const SizedBox(height: 5),
+                    SkeletonBox(width: 90, height: 10),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          Divider(color: c.sub.withValues(alpha: 0.1), height: 1),
+          const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: SkeletonBox(height: 52, radius: 10)),
-              const SizedBox(width: 10),
-              Expanded(child: SkeletonBox(height: 52, radius: 10)),
+              Expanded(child: SkeletonBox(height: 39, radius: 9)),
+              const SizedBox(width: 6),
+              Expanded(child: SkeletonBox(height: 39, radius: 9)),
+              const SizedBox(width: 6),
+              Expanded(child: SkeletonBox(height: 39, radius: 9)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class SkeletonInterfaceCard extends StatelessWidget {
+  final AppC c;
+  const SkeletonInterfaceCard({super.key, required this.c});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: c.sub.withValues(alpha: 0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              SkeletonBox(width: 125, height: 32, radius: 9),
+              const Spacer(),
+              SkeletonBox(width: 38, height: 38, radius: 9),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(child: SkeletonBox(height: 31, radius: 9)),
+              const SizedBox(width: 8),
+              Expanded(child: SkeletonBox(height: 31, radius: 9)),
             ],
           ),
           const SizedBox(height: 10),
-          const SkeletonBox(height: 7, radius: 6),
-          const SizedBox(height: 8),
-          const SkeletonBox(height: 7, radius: 6),
+          const SkeletonBox(height: 68, radius: 4),
         ],
       ),
     );

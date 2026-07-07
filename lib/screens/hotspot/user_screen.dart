@@ -5,6 +5,7 @@ import '../../core/theme.dart';
 import '../../core/mikrotik_api.dart';
 import '../../providers/app_provider.dart';
 import '../../widgets/skeleton.dart';
+import '../../widgets/router_choice_field.dart';
 
 class HotspotUserScreen extends StatefulWidget {
   final MikrotikApi api;
@@ -21,6 +22,8 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
   bool _loadingMore = false;
   bool _hasMore = true;
   bool _backing = false;
+  bool _fetching = false;
+  int _requestVersion = 0;
 
   String _search = '';
   String _filterProfile = 'Semua';
@@ -48,12 +51,9 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
 
   Future<void> _fetchProfiles() async {
     try {
-      final r = await widget.api.query(['/ip/hotspot/user/profile/print']);
-      final comments = <String>{};
-      // Ambil comment unik
-      final users = await widget.api.query([
-        '/ip/hotspot/user/print',
-        '=count-only=',
+      final r = await widget.api.queryOrThrow([
+        '/ip/hotspot/user/profile/print',
+        '=.proplist=name',
       ]);
       if (mounted) {
         setState(() => _profiles = r);
@@ -62,6 +62,9 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
   }
 
   Future<void> _fetchUsers({bool reset = false}) async {
+    if (_fetching && !reset) return;
+    final requestVersion = reset ? ++_requestVersion : _requestVersion;
+    _fetching = true;
     if (reset) {
       setState(() {
         _loading = true;
@@ -75,7 +78,10 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
 
     try {
       // Build query dengan filter server-side
-      final cmd = <String>['/ip/hotspot/user/print'];
+      final cmd = <String>[
+        '/ip/hotspot/user/print',
+        '=.proplist=.id,name,password,profile,comment,disabled',
+      ];
 
       // Filter by name (server-side)
       if (_search.isNotEmpty) {
@@ -92,21 +98,23 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
         cmd.add('?comment~$_filterComment');
       }
 
-      // Limit & offset
-      cmd.add('=start=$_offset');
-      cmd.add('=limit=$_limit');
+      final pageOffset = reset ? 0 : _offset;
+      final r = await widget.api.queryPageOrThrow(
+        cmd,
+        offset: pageOffset,
+        limit: _limit + 1,
+      );
 
-      final r = await widget.api.query(cmd);
-
-      if (mounted) {
+      if (mounted && requestVersion == _requestVersion) {
+        final page = r.take(_limit).toList();
         setState(() {
           if (reset) {
-            _users = r;
+            _users = page;
           } else {
-            _users.addAll(r);
+            _users.addAll(page);
           }
-          _offset += r.length;
-          _hasMore = r.length >= _limit;
+          _offset = pageOffset + page.length;
+          _hasMore = r.length > _limit;
           _loading = false;
           _loadingMore = false;
 
@@ -120,11 +128,15 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
         });
       }
     } catch (_) {
-      if (mounted) {
+      if (mounted && requestVersion == _requestVersion) {
         setState(() {
           _loading = false;
           _loadingMore = false;
         });
+      }
+    } finally {
+      if (requestVersion == _requestVersion) {
+        _fetching = false;
       }
     }
   }
@@ -166,7 +178,7 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
       ),
     );
     if (ok == true) {
-      await widget.api.query(['/ip/hotspot/user/remove', '=.id=$id']);
+      await widget.api.queryOrThrow(['/ip/hotspot/user/remove', '=.id=$id']);
       _fetchUsers(reset: true);
     }
   }
@@ -175,7 +187,7 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
     setState(() => _backing = true);
     try {
       // Export ke file .rsc
-      await widget.api.query([
+      await widget.api.queryOrThrow([
         '/ip/hotspot/user/export',
         '=file=backup_hotspot_user',
       ]);
@@ -203,7 +215,7 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
           child: Column(
             children: [
               // Search — server-side
@@ -236,7 +248,7 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: profileNames.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 6),
+                  separatorBuilder: (_, _) => const SizedBox(width: 6),
                   itemBuilder: (_, i) {
                     final name = profileNames[i];
                     final active = _filterProfile == name;
@@ -285,7 +297,7 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: _comments.length + 1,
-                    separatorBuilder: (_, __) => const SizedBox(width: 6),
+                    separatorBuilder: (_, _) => const SizedBox(width: 6),
                     itemBuilder: (_, i) {
                       final all = i == 0;
                       final name = all ? 'Semua' : _comments[i - 1];
@@ -337,6 +349,20 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
                     style: TextStyle(color: c.sub, fontSize: 11),
                   ),
                   const Spacer(),
+                  IconButton.filled(
+                    tooltip: 'Tambah Hotspot User',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () async {
+                      final changed = await showModalBottomSheet<bool>(
+                        context: context,
+                        isScrollControlled: true,
+                        builder: (_) => _HotspotUserEditor(api: widget.api),
+                      );
+                      if (changed == true) _fetchUsers(reset: true);
+                    },
+                    icon: const Icon(Icons.add_rounded, size: 17),
+                  ),
+                  const SizedBox(width: 6),
                   // Backup button
                   GestureDetector(
                     onTap: _backing ? null : _backupUsers,
@@ -400,9 +426,9 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
         Expanded(
           child: _loading
               ? ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: 6,
-                  itemBuilder: (_, __) => SkeletonCard(c: c),
+                  itemBuilder: (_, _) => SkeletonCard(c: c),
                 )
               : _users.isEmpty
               ? Center(
@@ -412,7 +438,7 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
                   ),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   itemCount: _users.length + (_hasMore ? 1 : 0),
                   itemBuilder: (_, i) {
                     if (i == _users.length) {
@@ -480,11 +506,11 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: c.card,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: disabled
-                              ? AppColors.red.withValues(alpha: 0.2)
-                              : AppColors.cyan.withValues(alpha: 0.1),
+                              ? AppColors.red.withValues(alpha: 0.28)
+                              : c.border,
                         ),
                       ),
                       child: Row(
@@ -592,6 +618,148 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
                 ),
         ),
       ],
+    );
+  }
+}
+
+class _HotspotUserEditor extends StatefulWidget {
+  final MikrotikApi api;
+
+  const _HotspotUserEditor({required this.api});
+
+  @override
+  State<_HotspotUserEditor> createState() => _HotspotUserEditorState();
+}
+
+class _HotspotUserEditorState extends State<_HotspotUserEditor> {
+  static const _labels = <String, String>{
+    'server': 'Server',
+    'name': 'Name *',
+    'password': 'Password',
+    'address': 'Address',
+    'mac-address': 'MAC Address',
+    'profile': 'Profile',
+    'routes': 'Routes',
+    'email': 'Email',
+    'limit-uptime': 'Limit Uptime',
+    'limit-bytes-in': 'Limit Bytes In',
+    'limit-bytes-out': 'Limit Bytes Out',
+    'limit-bytes-total': 'Limit Bytes Total',
+    'comment': 'Comment',
+  };
+
+  final Map<String, TextEditingController> _controllers = {};
+  List<String> _servers = [];
+  List<String> _profiles = [];
+  bool _loading = true;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    for (final entry in _labels.entries) {
+      _controllers[entry.key] = TextEditingController();
+    }
+    _controllers['server']!.text = 'all';
+    _controllers['profile']!.text = 'default';
+    _load();
+  }
+
+  Future<void> _load() async {
+    final results = await Future.wait([
+      widget.api.query(['/ip/hotspot/print']),
+      widget.api.query(['/ip/hotspot/user/profile/print']),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      _servers = [
+        'all',
+        ...results[0].map((r) => r['name']).whereType<String>(),
+      ];
+      _profiles = results[1].map((r) => r['name']).whereType<String>().toList();
+      _loading = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    for (final controller in _controllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (_controllers['name']!.text.trim().isEmpty) return;
+    setState(() => _saving = true);
+    final command = <String>['/ip/hotspot/user/add'];
+    for (final key in _labels.keys) {
+      final value = _controllers[key]!.text.trim();
+      if (value.isNotEmpty) command.add('=$key=$value');
+    }
+    try {
+      await widget.api.queryOrThrow(command);
+      if (mounted) Navigator.pop(context, true);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: AppColors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          12,
+          8,
+          12,
+          MediaQuery.viewInsetsOf(context).bottom + 12,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              ..._labels.entries.map((entry) {
+                final options = entry.key == 'server'
+                    ? _servers
+                    : entry.key == 'profile'
+                    ? _profiles
+                    : const <String>[];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 7),
+                  child: options.isEmpty
+                      ? TextField(
+                          controller: _controllers[entry.key],
+                          obscureText: entry.key == 'password',
+                          decoration: InputDecoration(labelText: entry.value),
+                        )
+                      : RouterChoiceField(
+                          controller: _controllers[entry.key]!,
+                          label: entry.value,
+                          options: options,
+                          loading: _loading,
+                        ),
+                );
+              }),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _saving ? null : _save,
+                  child: const Text('Tambahkan User'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

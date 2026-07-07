@@ -120,7 +120,7 @@ class _HotspotGenerateScreenState extends State<HotspotGenerateScreen> {
           cmd.add('=server=$_selectedServer');
         }
 
-        await widget.api.query(cmd);
+        await widget.api.queryOrThrow(cmd);
         results.add({'name': name, 'password': pass});
         await Future.delayed(const Duration(milliseconds: 80));
       }
@@ -376,17 +376,8 @@ class _HotspotGenerateScreenState extends State<HotspotGenerateScreen> {
                         height: 50,
                         child: DecoratedBox(
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppColors.cyan, AppColors.cyanDark],
-                            ),
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.cyan.withValues(alpha: 0.35),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                            color: AppColors.cyan,
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: ElevatedButton(
                             onPressed: _generating ? null : _generate,
@@ -394,7 +385,7 @@ class _HotspotGenerateScreenState extends State<HotspotGenerateScreen> {
                               backgroundColor: Colors.transparent,
                               shadowColor: Colors.transparent,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                             ),
                             child: _generating
