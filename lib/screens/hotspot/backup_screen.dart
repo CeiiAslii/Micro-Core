@@ -101,9 +101,6 @@ class _HotspotBackupScreenState extends State<HotspotBackupScreen>
   }
 }
 
-// ════════════════════════════════════════════════════════
-// BACKUP TAB
-// ════════════════════════════════════════════════════════
 class _BackupTab extends StatefulWidget {
   final MikrotikApi api;
   const _BackupTab({required this.api});
@@ -190,7 +187,6 @@ class _BackupTabState extends State<_BackupTab> {
     return sanitized.isEmpty ? 'backup-hotspot-user' : sanitized;
   }
 
-  // Build konten .rsc dari data user hotspot
   Future<String> _buildRscContent() async {
     final users = await widget.api.queryOrThrow([
       '/ip/hotspot/user/print',
@@ -201,7 +197,6 @@ class _BackupTabState extends State<_BackupTab> {
     return compute(_buildRscFromUsers, users);
   }
 
-  // Build konten .rsc dari daftar user di isolate terpisah
   static String _buildRscFromUsers(List<dynamic> users) {
     final buf = StringBuffer();
     buf.writeln('# Core Monitor Backup');
@@ -238,7 +233,6 @@ class _BackupTabState extends State<_BackupTab> {
     return buf.toString();
   }
 
-  // Simpan file ke HP
   Future<String> _saveToDevice(String fileName, String content) async {
     if (Platform.isAndroid) {
       final sdkInt =
@@ -275,7 +269,6 @@ class _BackupTabState extends State<_BackupTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Info banner
           _banner(
             icon: Icons.info_outline_rounded,
             color: AppColors.cyan,
@@ -288,7 +281,6 @@ class _BackupTabState extends State<_BackupTab> {
 
           const SizedBox(height: 16),
 
-          // Form card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -299,7 +291,6 @@ class _BackupTabState extends State<_BackupTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header
                 Row(
                   children: [
                     Container(
@@ -328,7 +319,6 @@ class _BackupTabState extends State<_BackupTab> {
 
                 const SizedBox(height: 18),
 
-                // Nama file
                 Text(
                   'Nama File Backup',
                   style: TextStyle(
@@ -381,7 +371,6 @@ class _BackupTabState extends State<_BackupTab> {
 
                 const SizedBox(height: 20),
 
-                // Button
                 _actionButton(
                   label: _running ? 'Sedang Backup...' : 'Mulai Backup',
                   icon: Icons.backup_rounded,
@@ -393,7 +382,6 @@ class _BackupTabState extends State<_BackupTab> {
             ),
           ),
 
-          // Log output
           if (_log.isNotEmpty) ...[const SizedBox(height: 16), _logBox(c)],
 
           const SizedBox(height: 24),
@@ -445,9 +433,6 @@ class _BackupTabState extends State<_BackupTab> {
   }
 }
 
-// ════════════════════════════════════════════════════════
-// RESTORE TAB
-// ════════════════════════════════════════════════════════
 class _RestoreTab extends StatefulWidget {
   final MikrotikApi api;
   const _RestoreTab({required this.api});
@@ -525,7 +510,6 @@ class _RestoreTabState extends State<_RestoreTab> {
     }
   }
 
-  // Parse file .rsc dan add user satu per satu
   Future<void> _manualRestore(String content) async {
     _setLog('⏳ Parsing file backup...');
 
@@ -591,7 +575,6 @@ class _RestoreTabState extends State<_RestoreTab> {
     }
   }
 
-  // Parse satu baris RSC → list parameter API
   List<String>? _parseRscLine(String line) {
     if (!line.startsWith('add ')) return null;
     final params = line.substring(4).trim();
@@ -653,7 +636,6 @@ class _RestoreTabState extends State<_RestoreTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header
                 Row(
                   children: [
                     Container(
@@ -682,7 +664,6 @@ class _RestoreTabState extends State<_RestoreTab> {
 
                 const SizedBox(height: 16),
 
-                // File terpilih
                 if (_fileName.isNotEmpty) ...[
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -726,7 +707,6 @@ class _RestoreTabState extends State<_RestoreTab> {
                   const SizedBox(height: 12),
                 ],
 
-                // Progress
                 if (_running && _total > 0) ...[
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -826,9 +806,6 @@ class _RestoreTabState extends State<_RestoreTab> {
   }
 }
 
-// ════════════════════════════════════════════════════════
-// SHARED WIDGETS
-// ════════════════════════════════════════════════════════
 Widget _banner({
   required IconData icon,
   required Color color,

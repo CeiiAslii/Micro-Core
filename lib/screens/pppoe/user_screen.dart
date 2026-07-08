@@ -417,7 +417,6 @@ class _PppoeUserScreenState extends State<PppoeUserScreen> {
                   },
                 ),
         ),
-        // Pagination
         if (!_loading && _filtered.isNotEmpty)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

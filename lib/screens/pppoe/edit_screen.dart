@@ -193,7 +193,6 @@ class _PppoeEditScreenState extends State<PppoeEditScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // Status card
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -266,7 +265,6 @@ class _PppoeEditScreenState extends State<PppoeEditScreen> {
 
                   const SizedBox(height: 12),
 
-                  // Ganti password
                   _section(
                     icon: Icons.lock_reset_rounded,
                     color: AppColors.cyan,
@@ -337,7 +335,6 @@ class _PppoeEditScreenState extends State<PppoeEditScreen> {
 
                   const SizedBox(height: 12),
 
-                  // Ganti profile
                   _section(
                     icon: Icons.speed_rounded,
                     color: AppColors.purple,
@@ -409,7 +406,6 @@ class _PppoeEditScreenState extends State<PppoeEditScreen> {
 
                   const SizedBox(height: 12),
 
-                  // Remote IP
                   _section(
                     icon: Icons.lan_rounded,
                     color: AppColors.blue,

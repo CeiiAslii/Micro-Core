@@ -21,7 +21,6 @@ class _HotspotGenerateScreenState extends State<HotspotGenerateScreen> {
   bool _loadingData = true;
   bool _generating = false;
 
-  // Config
   int _qty = 5;
   int _length = 6;
   bool _samePassUser = true; // username = password
@@ -115,7 +114,6 @@ class _HotspotGenerateScreenState extends State<HotspotGenerateScreen> {
           '=profile=$_selectedProfile',
         ];
 
-        // Tambah server jika spesifik
         if (_selectedServer != null && _selectedServer!.isNotEmpty) {
           cmd.add('=server=$_selectedServer');
         }
@@ -175,7 +173,6 @@ class _HotspotGenerateScreenState extends State<HotspotGenerateScreen> {
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Title
                       Row(
                         children: [
                           Container(
@@ -204,7 +201,6 @@ class _HotspotGenerateScreenState extends State<HotspotGenerateScreen> {
 
                       const SizedBox(height: 18),
 
-                      // Profile
                       _label('Profile Paket', c),
                       const SizedBox(height: 6),
                       _dropdown(
@@ -225,7 +221,6 @@ class _HotspotGenerateScreenState extends State<HotspotGenerateScreen> {
 
                       const SizedBox(height: 12),
 
-                      // Server hotspot
                       _label('Server Hotspot', c),
                       const SizedBox(height: 6),
                       _dropdown(
@@ -253,7 +248,6 @@ class _HotspotGenerateScreenState extends State<HotspotGenerateScreen> {
 
                       const SizedBox(height: 12),
 
-                      // Prefix
                       _label('Prefix Username (opsional)', c),
                       const SizedBox(height: 6),
                       TextField(
@@ -283,7 +277,6 @@ class _HotspotGenerateScreenState extends State<HotspotGenerateScreen> {
 
                       const SizedBox(height: 12),
 
-                      // Qty + Length row
                       Row(
                         children: [
                           Expanded(
@@ -326,7 +319,6 @@ class _HotspotGenerateScreenState extends State<HotspotGenerateScreen> {
 
                       const SizedBox(height: 12),
 
-                      // Tipe karakter
                       _label('Pilihan Karakter', c),
                       const SizedBox(height: 8),
                       Wrap(
@@ -343,7 +335,6 @@ class _HotspotGenerateScreenState extends State<HotspotGenerateScreen> {
 
                       const SizedBox(height: 12),
 
-                      // User mode
                       _label('User Mode', c),
                       const SizedBox(height: 8),
                       Row(
@@ -370,7 +361,6 @@ class _HotspotGenerateScreenState extends State<HotspotGenerateScreen> {
 
                       const SizedBox(height: 18),
 
-                      // Generate button
                       SizedBox(
                         width: double.infinity,
                         height: 50,
@@ -436,7 +426,6 @@ class _HotspotGenerateScreenState extends State<HotspotGenerateScreen> {
                   ),
           ),
 
-          // Hasil
           if (_generated.isNotEmpty) ...[
             const SizedBox(height: 20),
             Row(

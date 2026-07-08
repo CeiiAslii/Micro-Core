@@ -57,7 +57,6 @@ class _SkeletonBoxState extends State<SkeletonBox>
   }
 }
 
-// Card skeleton
 class SkeletonCard extends StatelessWidget {
   final AppC c;
   const SkeletonCard({super.key, required this.c});
@@ -108,7 +107,6 @@ class SkeletonCard extends StatelessWidget {
   }
 }
 
-// Stat card skeleton
 class SkeletonStat extends StatelessWidget {
   final AppC c;
   const SkeletonStat({super.key, required this.c});
@@ -135,7 +133,6 @@ class SkeletonStat extends StatelessWidget {
   }
 }
 
-// Router card skeleton
 class SkeletonRouterCard extends StatelessWidget {
   final AppC c;
   const SkeletonRouterCard({super.key, required this.c});

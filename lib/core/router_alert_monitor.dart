@@ -160,9 +160,7 @@ class RouterAlertMonitor {
     try {
       await _channel.invokeMethod<void>(method, arguments);
     } on MissingPluginException {
-      // Notifications are Android-only; monitoring should still run elsewhere.
     } on PlatformException {
-      // Permission or notification failures should not stop router polling.
     }
   }
 }

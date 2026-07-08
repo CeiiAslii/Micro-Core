@@ -1,33 +1,27 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Primary
   static const cyan = Color(0xFF55C2E8);
   static const cyanDark = Color(0xFF2588A8);
 
-  // Dark theme
   static const darkBg = Color(0xFF0D1117);
   static const darkSurface = Color(0xFF121820);
   static const darkCard = Color(0xFF171E27);
   static const darkCard2 = Color(0xFF1C2530);
 
-  // Light theme
   static const lightBg = Color(0xFFF4F7F9);
   static const lightSurface = Color(0xFFEDF2F5);
   static const lightCard = Color(0xFFFFFFFF);
 
-  // Accent
   static const green = Color(0xFF55C993);
   static const orange = Color(0xFFE9A45F);
   static const red = Color(0xFFE56B72);
   static const purple = Color(0xFF9A8BD8);
   static const blue = Color(0xFF6D9EEB);
 
-  // Text dark
   static const textDark = Color(0xFFFFFFFF);
   static const textDarkSub = Color(0xFF8E9AA8);
 
-  // Text light
   static const textLight = Color(0xFF1A1A2E);
   static const textLightSub = Color(0xFF66717E);
 }
@@ -265,7 +259,6 @@ class AppTheme {
   }
 }
 
-// Helper class untuk akses warna berdasarkan mode
 class AppC {
   final bool dark;
   const AppC(this.dark);

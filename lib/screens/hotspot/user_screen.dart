@@ -33,7 +33,6 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
   int _offset = 0;
   final int _limit = 20;
 
-  // Daftar comment unik untuk filter mikhmon
   List<String> _comments = [];
 
   @override
@@ -77,23 +76,19 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
     }
 
     try {
-      // Build query dengan filter server-side
       final cmd = <String>[
         '/ip/hotspot/user/print',
         '=.proplist=.id,name,password,profile,comment,disabled',
       ];
 
-      // Filter by name (server-side)
       if (_search.isNotEmpty) {
         cmd.add('?name~${_search.toLowerCase()}');
       }
 
-      // Filter by profile (server-side)
       if (_filterProfile != 'Semua') {
         cmd.add('?profile=$_filterProfile');
       }
 
-      // Filter by comment (mikhmon format)
       if (_filterComment.isNotEmpty) {
         cmd.add('?comment~$_filterComment');
       }
@@ -118,7 +113,6 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
           _loading = false;
           _loadingMore = false;
 
-          // Kumpulkan comment unik
           final commentSet = <String>{};
           for (final u in _users) {
             final c = u['comment'] ?? '';
@@ -186,7 +180,6 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
   Future<void> _backupUsers() async {
     setState(() => _backing = true);
     try {
-      // Export ke file .rsc
       await widget.api.queryOrThrow([
         '/ip/hotspot/user/export',
         '=file=backup_hotspot_user',
@@ -218,7 +211,6 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
           child: Column(
             children: [
-              // Search — server-side
               TextField(
                 onChanged: _onSearchChanged,
                 style: TextStyle(color: c.txt),
@@ -242,7 +234,6 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
 
               const SizedBox(height: 8),
 
-              // Filter profile chips
               SizedBox(
                 height: 34,
                 child: ListView.separated(
@@ -290,7 +281,6 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
 
               const SizedBox(height: 6),
 
-              // Filter comment mikhmon
               if (_comments.isNotEmpty)
                 SizedBox(
                   height: 30,
@@ -363,7 +353,6 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
                     icon: const Icon(Icons.add_rounded, size: 17),
                   ),
                   const SizedBox(width: 6),
-                  // Backup button
                   GestureDetector(
                     onTap: _backing ? null : _backupUsers,
                     child: Container(
@@ -422,7 +411,6 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
           ),
         ),
 
-        // List
         Expanded(
           child: _loading
               ? ListView.builder(
@@ -442,7 +430,6 @@ class _HotspotUserScreenState extends State<HotspotUserScreen> {
                   itemCount: _users.length + (_hasMore ? 1 : 0),
                   itemBuilder: (_, i) {
                     if (i == _users.length) {
-                      // Load more button
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         child: Center(

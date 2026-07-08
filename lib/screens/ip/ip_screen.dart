@@ -52,9 +52,7 @@ class _IpScreenState extends State<IpScreen> {
           r = await widget.api.query(['/ip/dhcp-server/print']);
           break;
         case 3:
-          // Ambil semua lease, filter bound di UI
           r = await widget.api.query(['/ip/dhcp-server/lease/print']);
-          // Sort: bound dulu
           r.sort((a, b) {
             final aStatus = a['status'] ?? '';
             final bStatus = b['status'] ?? '';
@@ -170,7 +168,6 @@ class _IpScreenState extends State<IpScreen> {
         final mac = item['mac-address'] ?? '-';
         final ip = item['address'] ?? '-';
 
-        // Warna berdasarkan status
         Color statusColor;
         switch (status) {
           case 'bound':
@@ -225,7 +222,6 @@ class _IpScreenState extends State<IpScreen> {
 
     return Column(
       children: [
-        // Header
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: Row(

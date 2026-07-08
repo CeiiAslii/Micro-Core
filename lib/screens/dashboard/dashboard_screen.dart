@@ -26,20 +26,17 @@ class _DashboardScreenState extends State<DashboardScreen>
   Timer? _timer;
   Timer? _resourceTimer;
 
-  // Router info
   String _identity = '-';
   String _model = '-';
   String _version = '-';
   String _uptime = '-';
   String _platform = '-';
 
-  // Resources
   int _cpuVal = 0;
   int _ramVal = 0;
   String _cpuLoad = '0%';
   String _temp = 'N/A';
 
-  // Stats
   int _hotspot = 0;
   int _pppoe = 0;
   int _dhcp = 0;
@@ -145,7 +142,6 @@ class _DashboardScreenState extends State<DashboardScreen>
         final used = total - free;
         final pct = total > 0 ? ((used / total) * 100).round() : 0;
 
-        // Fix suhu — coba semua field yang mungkin ada di RouterOS
         String temp = 'N/A';
         final tempFields = [
           'cpu-temperature',
@@ -160,7 +156,6 @@ class _DashboardScreenState extends State<DashboardScreen>
             break;
           }
         }
-        // Jika masih N/A, coba query health
         if (temp == 'N/A') {
           try {
             final health = await widget.api.queryOrThrow([
@@ -246,7 +241,6 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   String _formatUptime(String uptime) {
-    // Format: 1w2d3h4m5s → 1w 2d 3h 4m
     final match = RegExp(
       r'^(?:(\d+)w)?(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$',
     ).firstMatch(uptime.trim());
@@ -280,7 +274,6 @@ class _DashboardScreenState extends State<DashboardScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Router card skeleton
             SkeletonRouterCard(c: c),
             const SizedBox(height: 14),
             SkeletonBox(width: 90, height: 13, radius: 4),
@@ -315,7 +308,6 @@ class _DashboardScreenState extends State<DashboardScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Router Info Card ─────────────────────
             _RouterCard(
               identity: _identity,
               model: _model,
@@ -329,7 +321,6 @@ class _DashboardScreenState extends State<DashboardScreen>
 
             const SizedBox(height: 14),
 
-            // ── Section: Statistik ───────────────────
             _sectionHeader('Koneksi Aktif', c),
             const SizedBox(height: 8),
 
@@ -379,7 +370,6 @@ class _DashboardScreenState extends State<DashboardScreen>
 
             const SizedBox(height: 12),
 
-            // ── Section: Info ────────────────────────
             _InfoCard(
               identity: _identity,
               model: _model,
@@ -427,7 +417,6 @@ class _DashboardScreenState extends State<DashboardScreen>
   );
 }
 
-// ── Router Card ──────────────────────────────────────────
 class _RouterCard extends StatelessWidget {
   final String identity, model, version, uptime, temp, cpuLoad, ramLoad;
   final AppC c;
@@ -456,7 +445,6 @@ class _RouterCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
             children: [
               Container(
@@ -511,7 +499,6 @@ class _RouterCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // Online badge
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
@@ -593,7 +580,6 @@ class _RouterCard extends StatelessWidget {
   );
 }
 
-// ── Stat Card ────────────────────────────────────────────
 class _StatCard extends StatelessWidget {
   final IconData icon;
   final String label, value;
@@ -664,7 +650,6 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// ── Info Card ────────────────────────────────────────────
 class _InfoCard extends StatelessWidget {
   final String identity, model, version, platform, uptime;
   final AppC c;

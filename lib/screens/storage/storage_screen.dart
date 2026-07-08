@@ -266,7 +266,6 @@ class _StorageScreenState extends State<StorageScreen> {
 
     return Column(
       children: [
-        // Storage info
         Padding(
           padding: const EdgeInsets.all(16),
           child: Container(
@@ -359,7 +358,6 @@ class _StorageScreenState extends State<StorageScreen> {
           ),
         ),
 
-        // File list header
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
@@ -429,7 +427,6 @@ class _StorageScreenState extends State<StorageScreen> {
 
         const SizedBox(height: 8),
 
-        // Files
         Expanded(
           child: _loading
               ? const Center(

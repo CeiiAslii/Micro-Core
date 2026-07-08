@@ -88,7 +88,6 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Theme ───────────────────────────────────────────
   Future<void> toggleTheme() async {
     _isDark = !_isDark;
     notifyListeners();
@@ -96,7 +95,6 @@ class AppProvider extends ChangeNotifier {
     await p.setBool('isDark', _isDark);
   }
 
-  // ── Router connection ────────────────────────────────
   void setApi(MikrotikApi api) {
     clearRouterCaches();
     _stopHealthMonitor();
@@ -120,7 +118,6 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Logout — TIDAK auto-login lagi
   Future<void> logout() async {
     _api?.disconnect();
     _api = null;
@@ -253,7 +250,6 @@ class AppProvider extends ChangeNotifier {
     _interfaceCachedAt = null;
   }
 
-  // ── Saved Routers ────────────────────────────────────
   Future<void> _loadSavedRouters() async {
     final p = await SharedPreferences.getInstance();
     final json = p.getString('savedRouters') ?? '[]';
@@ -302,7 +298,6 @@ class AppProvider extends ChangeNotifier {
     required String username,
     required String password,
   }) async {
-    // Update jika sudah ada (sama host+username)
     final idx = _savedRouters.indexWhere(
       (r) => r.host == host && r.username == username,
     );

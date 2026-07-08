@@ -127,7 +127,6 @@ class _DashboardInterfaceCardState extends State<DashboardInterfaceCard>
       });
       _chartAnimation.forward(from: 0);
     } catch (_) {
-      // Keep the last valid sample.
     } finally {
       _polling = false;
     }

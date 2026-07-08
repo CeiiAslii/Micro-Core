@@ -450,7 +450,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(color: c.sub, fontSize: 13),
                     ),
 
-                    // Form tambah router
                     if (_showForm) ...[
                       const SizedBox(height: 16),
                       Container(
@@ -506,7 +505,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               c,
                             ),
                             const SizedBox(height: 9),
-                            // Password
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -630,7 +628,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
 
-            // Router cards
             if (_showForm)
               const SliverToBoxAdapter(child: SizedBox(height: 24))
             else if (routers.isEmpty)
@@ -714,7 +711,6 @@ class _LoginScreenState extends State<LoginScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
             child: Row(
               children: [
-                // Icon
                 Container(
                   width: 40,
                   height: 40,

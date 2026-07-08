@@ -144,7 +144,6 @@ class _InterfaceScreenState extends State<InterfaceScreen>
       });
       _chartAnimation.forward(from: 0);
     } catch (_) {
-      // Nilai terakhir dipertahankan saat satu polling gagal.
     } finally {
       _polling = false;
     }

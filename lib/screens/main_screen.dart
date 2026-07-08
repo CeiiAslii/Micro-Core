@@ -5,7 +5,6 @@ import '../providers/app_provider.dart';
 import '../widgets/drawer_widget.dart';
 import 'login_screen.dart';
 
-// Import semua screen
 import 'dashboard/dashboard_screen.dart';
 import 'ip/ip_screen.dart';
 import 'hotspot/hotspot_screen.dart';
@@ -343,7 +342,6 @@ class _MainScreenState extends State<MainScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              // Logout — tidak auto-login lagi
               final provider = this.context.read<AppProvider>();
               await provider.logout();
               if (!mounted) return;
